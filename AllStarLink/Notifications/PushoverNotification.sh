@@ -4,8 +4,8 @@
 # This script is used to send a Pushover (https://pushover.net/) notification when a node connects to your AllStarLink node (https://allstarlink.org/)
 # You will need to update your /etc/asterisk/rpt.conf file by adding the following at the bottom, under your node stanza
 # 
-# connpgm=/etc/asterisk/scripts/Notification.sh 1
-# discpgm=/etc/asterisk/scripts/Notification.sh 0
+# connpgm=/etc/asterisk/scripts/PushoverNotification.sh 1
+# discpgm=/etc/asterisk/scripts/PushoverNotification.sh 0
 #
 # NOTE: You will need to add jq (command line JSON processor) to your pi (sudo apt-get install jq)
 
