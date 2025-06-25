@@ -9,11 +9,6 @@
 # NOTE: You will need to add jq (command line JSON processor) to your pi (sudo apt-get install jq)
 #
 
-# For Pushover credentials, I created the file /etc/profile.d/profile.sh, did a chmod +x and added
-# export APP_TOKEN=MyToken
-# export USER_KEY=MyUserKey
-# No parentheses around the actual value and this survives reboots. Make sure there is not a space before or after the eqals sign in the script
-
 # Both connpgm and discpgm pass two command line arguments to your program: The first is your node number while the second is their node number
 # NOTE: Make sure you have quotes around the command line arguments assignments
 CONNECT_OR_DISCONNECT=$1
