@@ -1,5 +1,6 @@
 #!/bin/bash
 #
+# Remember: sudo chmod +x PushoverNotification.sh 
 # This script is used to send a Pushover (https://pushover.net/) notification when a node connects to your AllStarLink node (https://allstarlink.org/)
 # You will need to update your /etc/asterisk/rpt.conf file by adding the following at the bottom, under your node stanza
 # 
