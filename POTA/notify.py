@@ -3,8 +3,11 @@
 # Sends a Pushover when any POTA activators are from a given location
 # Only spots that happened less than 2 minutes ago are included
 # as well as we are restricted to just FT4 and FT8
-# NOTE: You need to create an .env file in the root of your project that contains two variables:
-# PUSHOVER_TOKEN and PUSHOVER_USER
+# NOTE: You need to create an .env file in the root of your project that contains the variables:
+# PUSHOVER_TOKEN
+# PUSHOVER_USER
+# QRZ_USERNAME
+# QRZ_PASSWORD
 #------------------------------------------------------------------------------------------------#
 
 import json
@@ -46,7 +49,9 @@ def get_ham_band(value):
   else:
      return " [ERROR: Not Mapped]: "+ str(frequency)
 
-
+# Retrieve the QRZ key to use in subsequent API calls
+# The key is good for 24 hours so at some point, cache this and update daily
+# instead of what is being done now
 def get_qrz_key():
   qrz_headers = {'Accept': 'application/xml'}
   qrz_response = requests.get(url='http://online.qrz.com/bin/xml?username=' + os.getenv('QRZ_USERNAME') + ';password=' + os.getenv('QRZ_PASSWORD'),
@@ -56,18 +61,24 @@ def get_qrz_key():
   key =  root.findtext(".//qrz:Key", namespaces=ns)
   return key
 
+# Retrieve the first and last name of the provided callsign
+# Eventually will get this to return an object
 def get_qrz_callsign_info(callsign):
   qrz_headers = {'Accept': 'application/xml'}
-  qrz_key = get_qrz_key()
+  qrz_key = get_qrz_key() # Grab our key for the API call
   qrz_url = 'http://online.qrz.com/bin/xml?s='+ qrz_key + ';callsign='+callsign
   qrz_resp = requests.get(qrz_url, headers=qrz_headers)
-  # Make sure we have a response..
+  # Make sure we have a response.. fix this later
   if qrz_resp.text:
    root = ET.fromstring(qrz_resp.content)
    ns = {"qrz": "http://online.qrz.com"}  # map a prefix to the default NS
    first_name = root.findtext(".//qrz:fname", namespaces=ns)
    last_name = root.findtext(".//qrz:name", namespaces=ns)
-   return first_name + ' ' + last_name
+   #  Not all users actually have a first and last name, could be a trustee is in charge of record
+   if(first_name is not None and last_name is not None):
+    return first_name + ' ' + last_name
+   elif( root.findtext(".//qrz:trustee", namespaces=ns) is not None):
+     return root.findtext(".//qrz:trustee", namespaces=ns)
   else:
     return 'Not Found'
 
@@ -76,7 +87,7 @@ response = requests.get("https://api.pota.app/spot/activator")
 spots = json.loads(response.text)
 
 # Locations of interest
-locations = ["US-FL", "US-HI", "US-RI", "US-LA", "US-SC", "US-CA", "CA-ON", "US-VT", "US-NH","GB-ENG"]
+locations = ["US-HI", "US-RI", "US-ME", "US-NH", "US-CA", "CA-ON", "US-VT", "US-NH"]
 
 # An array to hold our notification text per spot
 notify = []
@@ -87,10 +98,9 @@ now = datetime.now(pytz.utc)
 # Over the spots we shall go
 for spot in spots:
   # Only interested in digital modes: FT4 and FT8
-  if 1==1: #spot["mode"] == "FT8" or spot["mode"] == "FT4":
+  if spot["mode"] == "FT8" or spot["mode"] == "FT4":
     # Check if it is a location we are interested in
     if spot["locationDesc"] in locations:
-
       # Make sure our datetime objects in UTC
       # We are only interested in spots that occurred less than 2 minutes ago
       spot_datetime = datetime.fromisoformat(spot["spotTime"]+'+00:00')
