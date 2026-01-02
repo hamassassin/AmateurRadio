@@ -106,19 +106,11 @@ for spot in spots:
       spot_datetime = datetime.fromisoformat(spot["spotTime"]+'+00:00')
       difference = now - spot_datetime
       seconds = difference.seconds
-      hours, seconds = divmod(seconds, 3600)
-      minutes, seconds = divmod(seconds, 60)
 
-      # Our fancy formatting for how long ago the signal was heard
-      if( minutes == 0 or minutes ==1 ):
-       heard = ''
-       if( minutes==1):
-        heard = '  (1 minute and ' + str(seconds) + ' seconds ago)'
-       else:
+      if difference.total_seconds() < 120:
         heard = ' (' + str(seconds) + ' seconds ago)'
-
-       # Scarf up our signals that were heard and make it somewhat readable for Pushover
-       notify.append('[' + spot["mode"] + ':' + spot["locationDesc"] + '] ' + spot["activator"] + ' (' + get_qrz_callsign_info(spot["activator"]) + ') was at ' + spot["name"] + ' on ' + get_ham_band(spot["frequency"]) + heard)
+        # Scarf up our signals that were heard and make it somewhat readable for Pushover
+        notify.append('[' + spot["mode"] + ':' + spot["locationDesc"] + '] ' + spot["activator"] + ' (' + get_qrz_callsign_info(spot["activator"]) + ') was at ' + spot["name"] + ' on ' + get_ham_band(spot["frequency"]) + heard)
 
 # Only send a Pushover IF there are elements in the array
 if notify:
@@ -132,6 +124,7 @@ if notify:
                        urllib.parse.urlencode({
                        "token": os.getenv('PUSHOVER_TOKEN'),
                        "user": os.getenv('PUSHOVER_USER'),
+                       "sound": 'gamelan',
                        "message": "\n".join(notify),
              }), {"Content-type": "application/x-www-form-urlencoded"})
   conn.getresponse() # Check response at some point
