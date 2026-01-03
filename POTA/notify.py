@@ -13,11 +13,11 @@
 #  50 states.
 #  This task (and others) will be orchestrated by Prefect (https://prefect.io) which will be
 #  running in a Docker container as that's another piece of technology I'd like to begin using
-#  So, there you have it. Happy hunting, feel free to adapt this script in anyway you see fit
+#  So, there you have it. Happy hunting, feel free to adapt this script in any way you see fit
 #
 # Learning a bit in Python, so expect errors or code that is completely wrong, will eventually
 # move a lot of this into classes, but that's for another day as is getting appropriate styling
-# conventions
+# conventions. Code is a maximum of 79 characters wide, will do same to comments
 #
 # Sends a Pushover when any POTA activators that are from a given location
 # Only spots that happened less than 2 minutes ago are included
