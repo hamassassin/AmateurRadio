@@ -1,7 +1,8 @@
-#------------------------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 #
 # Purpose:
-#  Wanted to dive into Pyton deeper for years so I took the following as my first deep dive:
+#  Wanted to dive into Pyton deeper for years so I took the following as my 
+#  first deep dive:
 #  In amateur radio there is Parks on the Air (POTA) in which you "hunt" activators in different
 #  parks around the USA or the world. You receive "achivement" points for making contacts across
 #  all 50 states and DC. I'm at my last 2 states needed to get all 50+DC: I'm currently missing
