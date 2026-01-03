@@ -1,11 +1,27 @@
 #------------------------------------------------------------------------------------------------#
+#
+# Purpose:
+#  Wanted to dive into Pyton deeper for years so I took the following as my first deep dive:
+#  In amateur radio there is Parks on the Air (POTA) in which you "hunt" activators in different
+#  parks around the USA or the world. You receive "achivement" points for making contacts across
+#  all 50 states and DC. I'm at my last 2 states needed to get all 50+DC: I'm currently missing
+#  Hawaii and Rhode Island. I decided to make a Python script that will parse the POTA API looking
+#  for activators who are using digital modes (FT4 or FT8) from either of these two states
+#  If an activator is found, and their latest spot occurred in the last 2 minutes, then a
+#  Pushover notification is sent with the details of the activator and then I can hunt them on the
+#  reported band and hopefully get them into my log as a confirmed contact and wrap a bow on my
+#  50 states.
+#  This task (and others) will be orchestrated by Prefect (https://prefect.io) which will be
+#  running in a Docker container as that's another piece of technology I'd like to begin using
+#  So, there you have it. Happy hunting, feel free to adapt this script in anyway you see fit
+#
 # Learning a bit in Python, so expect errors or code that is completely wrong, will eventually
 # move a lot of this into classes, but that's for another day as is getting appropriate styling
 # conventions
 #
 # Sends a Pushover when any POTA activators that are from a given location
 # Only spots that happened less than 2 minutes ago are included
-# as well as we are restricted to just FT4 and FT8.
+# as well as we are restricted to just FT4 and FT8 modes.
 # Three APIs are used:
 #  POTA (Parks on the Air): Free API
 #  QRZ: Have to be a paid Xml subscriber to use
@@ -18,6 +34,7 @@
 # PUSHOVER_USER
 # QRZ_USERNAME
 # QRZ_PASSWORD
+#
 #------------------------------------------------------------------------------------------------#
 
 import json
