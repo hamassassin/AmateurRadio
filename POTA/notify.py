@@ -63,6 +63,8 @@ def get_qrz_key():
 
 # Retrieve the first and last name of the provided callsign
 # Eventually will get this to return an object
+# NOTE: That is a field is null, it will not be present in the xml
+# https://www.qrz.com/XML/specifications.1.2.html
 def get_qrz_callsign_info(callsign):
   qrz_headers = {'Accept': 'application/xml'}
   qrz_key = get_qrz_key() # Grab our key for the API call
@@ -75,6 +77,7 @@ def get_qrz_callsign_info(callsign):
    first_name = root.findtext(".//qrz:fname", namespaces=ns)
    last_name = root.findtext(".//qrz:name", namespaces=ns)
    #  Not all users actually have a first and last name, could be a trustee is in charge of record
+   # e.g. check W4SPF, no fname
    if(first_name is not None and last_name is not None):
     return first_name + ' ' + last_name
    elif( root.findtext(".//qrz:trustee", namespaces=ns) is not None):
@@ -87,28 +90,27 @@ response = requests.get("https://api.pota.app/spot/activator")
 spots = json.loads(response.text)
 
 # Locations of interest
-locations = ["US-HI", "US-RI", "US-ME", "US-NH", "US-CA", "CA-ON", "US-VT", "US-NH"]
+locations = ["US-HI", "US-RI", "US-ME", "US-NH", "US-CA", "US-ID", "US-VT", "US-NH"]
 
 # An array to hold our notification text per spot
 notify = []
 
-# Current time in utc
+# Current time in utc as is the convention for hams (0 offset)
 now = datetime.now(pytz.utc)
 
 # Over the spots we shall go
 for spot in spots:
-  # Only interested in digital modes: FT4 and FT8
+  # Only interested in digital modes: FT4 or FT8
   if spot["mode"] == "FT8" or spot["mode"] == "FT4":
     # Check if it is a location we are interested in
     if spot["locationDesc"] in locations:
       # Make sure our datetime objects in UTC
-      # We are only interested in spots that occurred less than 2 minutes ago
       spot_datetime = datetime.fromisoformat(spot["spotTime"]+'+00:00')
       difference = now - spot_datetime
-      seconds = difference.seconds
 
+      # We are only interested in spots that occurred less than 2 minutes ago
       if difference.total_seconds() < 120:
-        heard = ' (' + str(seconds) + ' seconds ago)'
+        heard = ' (' + str(difference.seconds) + ' seconds ago)'
         # Scarf up our signals that were heard and make it somewhat readable for Pushover
         notify.append('[' + spot["mode"] + ':' + spot["locationDesc"] + '] ' + spot["activator"] + ' (' + get_qrz_callsign_info(spot["activator"]) + ') was at ' + spot["name"] + ' on ' + get_ham_band(spot["frequency"]) + heard)
 
