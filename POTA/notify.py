@@ -1,5 +1,8 @@
 #------------------------------------------------------------------------------------------------#
-# Learning a bit in Python, so expect errors or code that is completely wrong
+# Learning a bit in Python, so expect errors or code that is completely wrong, will eventually
+# move a lot of this into classes, but that's for another day as is getting appropriate styling
+# conventions
+#
 # Sends a Pushover when any POTA activators that are from a given location
 # Only spots that happened less than 2 minutes ago are included
 # as well as we are restricted to just FT4 and FT8.
@@ -10,6 +13,7 @@
 #
 # NOTE: You need to create an .env file in the root of your project that contains the variables:
 #       Remember, if in git, add .gitignore that includes .env in it, don't want secrets in git!
+#
 # PUSHOVER_TOKEN
 # PUSHOVER_USER
 # QRZ_USERNAME
@@ -31,64 +35,83 @@ import xml.etree.ElementTree as ET
 load_dotenv()
 
 # Rough conversion from frequency to band, cast the net very wide
+# A frequency is the input from the POTA API and the amateur radio
+# band is returned. Only interested in HF
+# Switched to tuples based upon recommendations
 def get_ham_band(value):
   frequency = float(value)
-  if frequency >= 1800 and frequency <= 2000:
-   return "160m"
-  elif frequency >= 3500 and frequency <= 4000:
-   return "80m"
-  elif frequency >= 5300 and frequency <= 5500:
-     return "60m"
-  elif frequency >= 7000 and frequency <= 7300:
-     return "40m"
-  elif frequency >= 10100 and frequency <= 10150:
-     return "30m"
-  elif frequency >= 14000 and frequency <= 14350:
-     return "20m"
-  elif frequency >= 18000 and frequency <= 18200:
-     return "17m"
-  elif frequency >= 21000 and frequency <= 21450:
-     return "15m"
-  elif frequency >= 24800 and frequency <= 25000:
-     return "12m"
-  elif frequency >= 28000 and frequency <= 29700:
-     return "10m"
-  else:
-     return " [ERROR: Not Mapped]: "+ str(frequency)
+  bands = [
+    (1800, 2000, "160m"),
+    (3500, 4000, "80m"),
+    (5300, 5500, "60m"),
+    (7000, 7300, "40m"),
+    (10100, 10150, "30m"),
+    (14000, 14350, "20m"),
+    (18000, 18200, "17m"),
+    (21000, 21450, "15m"),
+    (24800, 25000, "12m"),
+    (28000, 29700, "10m"),
+  ]
+  for low, high, band in bands:
+    if low <= frequency <= high:
+      return band
+
+  return f"[ERROR: Not Mapped]: {frequency}"
 
 # Retrieves the QRZ key to use in subsequent API calls
 # The key is good for 24 hours so at some point, cache this and update daily instead of what is being done now
+# Modified based upon code suggestions
 def get_qrz_key():
-  qrz_headers = {'Accept': 'application/xml'}
-  qrz_response = requests.get(url=f"http://online.qrz.com/bin/xml?username={os.getenv('QRZ_USERNAME')};password={os.getenv('QRZ_PASSWORD')}",
-                              headers=qrz_headers)
-  root = ET.fromstring(qrz_response.content)
-  ns = {"qrz": "http://online.qrz.com"}  # map a prefix to the default NS
-  key =  root.findtext(".//qrz:Key", namespaces=ns)
-  return key
+  QRZ_NS = {"qrz": "http://online.qrz.com"}
+  QRZ_API_URL = "http://online.qrz.com/bin/xml"
+
+  # Read from .env note that you HAVE to be a paying member to QRZ that includes
+  # Xml support to use this lookup
+  params = {
+    "username": os.getenv("QRZ_USERNAME"),
+    "password": os.getenv("QRZ_PASSWORD")
+  }
+  headers = {"Accept": "application/xml"}
+
+  response = requests.get(QRZ_API_URL, params=params, headers=headers)
+  response.raise_for_status()  # Raise exception for HTTP errors
+  root = ET.fromstring(response.content)
+  return root.findtext(".//qrz:Key", namespaces=QRZ_NS)
 
 # Retrieve the first and last name of the provided callsign
 # Eventually will get this to return an object
 # NOTE: That is a field is null, it will not be present in the xml
-# https://www.qrz.com/XML/specifications.1.2.html
+# See: https://www.qrz.com/XML/specifications.1.2.html
+# Also modified based upon suggestions
 def get_qrz_callsign_info(callsign, qrz_key):
-  qrz_headers = {'Accept': 'application/xml'}
-  qrz_url = f"http://online.qrz.com/bin/xml?s={qrz_key};callsign={callsign}"
-  qrz_resp = requests.get(qrz_url, headers=qrz_headers)
-  # Make sure we have a response.. fix this later
-  if qrz_resp.text:
-   root = ET.fromstring(qrz_resp.content)
-   ns = {"qrz": "http://online.qrz.com"}  # map a prefix to the default NS
-   first_name = root.findtext(".//qrz:fname", namespaces=ns)
-   last_name = root.findtext(".//qrz:name", namespaces=ns)
-   #  Not all users actually have a first and last name, could be a trustee is in charge of record
-   # e.g. check W4SPF, no fname
-   if(first_name is not None and last_name is not None):
-    return first_name + ' ' + last_name
-   elif( root.findtext(".//qrz:trustee", namespaces=ns) is not None):
-     return root.findtext(".//qrz:trustee", namespaces=ns)
+  QRZ_NS = {"qrz": "http://online.qrz.com"}
+  QRZ_API_URL = "http://online.qrz.com/bin/xml"
+
+  # Our request to get callsign information from QRZ
+  response = requests.get(
+    QRZ_API_URL,
+    params={"s": qrz_key, "callsign": callsign},
+    headers={"Accept": "application/xml"},
+    timeout=10
+  )
+  response.raise_for_status()
+
+  if not response.text:
+    return "Not Found"
+
+  root = ET.fromstring(response.content)
+  first_name = root.findtext(".//qrz:fname", namespaces=QRZ_NS)
+  last_name = root.findtext(".//qrz:name", namespaces=QRZ_NS)
+  trustee = root.findtext(".//qrz:trustee", namespaces=QRZ_NS)
+
+  # Note that not all callsign lookups contain both the fname and name
+  # for example, look at W4SPF
+  if first_name and last_name:
+    return f"{first_name} {last_name}"
+  elif trustee:
+    return trustee
   else:
-    return 'Not Found'
+    return "Not Found"
 
 # Our POTA API, create a class for this at some point
 response = requests.get("https://api.pota.app/spot/activator")
@@ -96,7 +119,12 @@ response = requests.get("https://api.pota.app/spot/activator")
 spots = json.loads(response.text)
 
 # Locations of interest
-locations = ["US-HI", "US-RI", "US-ME", "US-NH", "US-CA", "US-FL", "US-ID", "US-VT", "US-NH"]
+locations = [
+    "US-HI", "US-RI", "US-ME", "US-NH",
+    "US-CA", "US-FL", "US-ID", "US-VT"
+]
+
+spot_mode={"FT8", "FT4"}
 
 # An array to hold our notification text per spot
 notify = []
@@ -112,7 +140,7 @@ qrz_key = get_qrz_key()
 for spot in spots:
 
   # Only interested in digital modes: FT4 or FT8
-  if spot["mode"] == "FT8" or spot["mode"] == "FT4":
+  if spot["mode"] in spot_mode:
 
     # Check if it is a location we are interested in
     if spot["locationDesc"] in locations:
