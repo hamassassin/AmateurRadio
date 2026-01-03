@@ -1,8 +1,7 @@
-#-----------------------------------------------------------------------------#
+#------------------------------------------------------------------------------------------------#
 #
 # Purpose:
-#  Wanted to dive into Pyton deeper for years so I took the following as my 
-#  first deep dive:
+#  Wanted to dive into Pyton deeper for years so I took the following as my first deep dive:
 #  In amateur radio there is Parks on the Air (POTA) in which you "hunt" activators in different
 #  parks around the USA or the world. You receive "achivement" points for making contacts across
 #  all 50 states and DC. I'm at my last 2 states needed to get all 50+DC: I'm currently missing
@@ -166,7 +165,8 @@ for spot in spots:
       # Make sure our datetime objects in UTC
       spot_datetime = datetime.fromisoformat(spot["spotTime"]+'+00:00')
 
-      # And the difference between the time we made the call to the API and the spot was recorded in the API is...
+      # And the difference between the time we made the call to the API and
+      # the spot was recorded in the API is...
       difference = now - spot_datetime
 
       # We are only interested in spots that occurred less than 2 minutes ago
@@ -174,16 +174,22 @@ for spot in spots:
 
         heard = f" ({str(difference.seconds)} seconds ago)"
 
-        # Scarf up our signals that were heard and make it somewhat readable for Pushover
-        notify.append(f"[{spot["mode"]}:{spot["locationDesc"]}] {spot["activator"]} ({get_qrz_callsign_info(spot["activator"], qrz_key)}) was at {spot["name"]} on {get_ham_band(spot["frequency"])} {heard}")
-
+        # Scarf up our signals that were heard and make it somewhat readable
+        # for Pushover
+        notify.append(
+          f"[{spot['mode']}:{spot['locationDesc']}] "
+          f"{spot['activator']} "
+          f"({get_qrz_callsign_info(spot['activator'], qrz_key)}) "
+          f"was at {spot['name']} on {get_ham_band(spot['frequency'])} {heard}"
+        )
 # Only send a Pushover IF there are elements in the array
 if notify:
 
   # Ignore SSL issues
   ssl._create_default_https_context = ssl._create_unverified_context
 
-  # Time to send a pushover out: We'll just join the notify array split by a carriage return
+  # Time to send a pushover out: We'll just join the notify array split by a
+  # carriage return
   conn = http.client.HTTPSConnection("api.pushover.net:443")
 
   conn.request("POST",
