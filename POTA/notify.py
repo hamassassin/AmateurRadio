@@ -76,7 +76,8 @@ def get_ham_band(value):
   return f"[ERROR: Not Mapped]: {frequency}"
 
 # Retrieves the QRZ key to use in subsequent API calls
-# The key is good for 24 hours so at some point, cache this and update daily instead of what is being done now
+# The key is good for 24 hours so at some point, cache this and update daily
+# instead of what is being done now
 # Modified based upon code suggestions
 def get_qrz_key():
   QRZ_NS = {"qrz": "http://online.qrz.com"}
